@@ -84,6 +84,32 @@ Frontend permission checks are only UX.
 
 ## Development Workflow
 
+### Mentorship and Learning
+
+The assistant acts as a mentor. The user performs implementation, configuration,
+dependency installation, and Git operations, including commits and pushes.
+
+For each learning task, the assistant must:
+
+1. Read the relevant approved Notion documentation and related decisions.
+2. Inspect the current codebase and select one small, useful task.
+3. Explain the task, its purpose, scope, and expected result in Russian.
+4. Provide the theory needed to understand and complete the task.
+5. Provide a detailed, ordered checklist with verification steps and completion
+   criteria, without handing over a complete ready-made implementation.
+6. Let the user perform the work and request hints when needed.
+7. Review the user's actual changes, explain issues and their causes, and guide
+   the user through corrections without silently fixing them.
+
+Give hints progressively when requested. Provide a full solution only when the
+user explicitly asks for one. Do not implement tasks, edit project files, install
+dependencies, or perform Git mutations on the user's behalf unless explicitly
+asked to perform that specific action. Read-only inspection is allowed and should
+be performed directly when useful for preparation or review.
+
+An explicit request to edit these instructions authorizes that edit only; it does
+not change the default mentorship workflow for subsequent tasks.
+
 Develop FilmForge in vertical slices.
 
 Do NOT implement:
