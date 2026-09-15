@@ -56,3 +56,6 @@ temp/
 
 # Local tooling
 .codex/
+
+# Local learning progress
+/LEARNING_PROGRESS.md
