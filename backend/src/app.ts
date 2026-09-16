@@ -1,4 +1,4 @@
-import express from 'express';
+import express from 'express'
 import { router as healthRouter } from './modules/health/health.routes.js'
 
 export const app = express()

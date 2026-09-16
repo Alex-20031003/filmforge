@@ -1,11 +1,11 @@
-import { Router } from 'express';
+import { Router } from 'express'
 
 export const router = Router()
 
 router.get('/', (_req, res) => {
   res.status(200).json({
     data: {
-      status: 'ok'
-    }
+      status: 'ok',
+    },
   })
 })

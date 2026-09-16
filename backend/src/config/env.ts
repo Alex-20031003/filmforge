@@ -5,12 +5,7 @@ const envSchema = z.object({
     .enum(['development', 'test', 'production'])
     .default('development'),
 
-  PORT: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(65535)
-    .default(4200)
+  PORT: z.coerce.number().int().min(1).max(65535).default(4200),
 })
 
 const result = envSchema.safeParse(process.env)
