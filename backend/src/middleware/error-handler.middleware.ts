@@ -1,7 +1,11 @@
 import type { ErrorRequestHandler } from 'express'
 import { AppError } from '../shared/errors/app-error.js'
 
-export const errorHandler: ErrorRequestHandler = (error, _req, res, next) => {
+export const errorHandler: ErrorRequestHandler = (error, req, res, next) => {
+  if (!(error instanceof AppError)) {
+    req.log.error({ err: error }, 'Unexpected request error')
+  }
+
   if (res.headersSent) {
     next(error)
     return
