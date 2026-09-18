@@ -2,8 +2,11 @@ import express from 'express'
 import { router as healthRouter } from './modules/health/health.routes.js'
 import { errorHandler } from './middleware/error-handler.middleware.js'
 import { notFoundMiddleware } from './middleware/not-found.middleware.js'
+import { requestLoggerMiddleware } from './middleware/request-logger.middleware.js'
 
 export const app = express()
+
+app.use(requestLoggerMiddleware)
 
 app.use(express.json())
 
