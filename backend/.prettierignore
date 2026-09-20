@@ -2,5 +2,12 @@ node_modules/
 dist/
 coverage/
 
+src/generated/prisma/
 pnpm-lock.yaml
+skills-lock.json
 .env
+.env.*
+
+.agents/
+.claude/
+.windsurf/
