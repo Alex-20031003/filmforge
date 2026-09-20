@@ -14,7 +14,8 @@
     "prisma:format": "pnpm exec prisma format",
     "prisma:format:check": "prisma format --check",
     "prisma:validate": "prisma validate",
-    "prisma:migrate:status": "prisma migrate status"
+    "prisma:migrate:status": "prisma migrate status",
+    "prisma:seed": "prisma db seed"
   },
   "keywords": [],
   "author": "",
