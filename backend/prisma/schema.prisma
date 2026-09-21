@@ -12,6 +12,46 @@ datasource db {
   provider = "postgresql"
 }
 
+// -------------------------------------ENUMS-------------------------------------
+
+enum SystemRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum AccountStatus {
+  PENDING_ACTIVATION
+  ACTIVE
+  DISABLED
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  ON_LEAVE
+  INACTIVE
+}
+
+enum Department {
+  MANAGEMENT
+  PRODUCTION
+  DIRECTING
+  WRITING
+  CASTING
+  LOCATIONS
+  CAMERA
+  LIGHTING
+  SOUND
+  ART
+  COSTUME
+  MAKEUP
+  POST_PRODUCTION
+  ACTING
+  OTHER
+}
+
+// -------------------------------------MODELS-------------------------------------
+
 model Company {
   id          String   @id @default(uuid()) @db.Uuid
   name        String
@@ -19,4 +59,46 @@ model Company {
   logoUrl     String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  users UserAccount[]
+}
+
+model UserAccount {
+  id                      String    @id @default(uuid()) @db.Uuid
+  username                String    @unique
+  passwordHash            String
+  recoveryEmail           String?   @unique
+  recoveryEmailVerifiedAt DateTime?
+  mustChangePassword      Boolean   @default(true)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  accountStatus AccountStatus @default(PENDING_ACTIVATION)
+  systemRole    SystemRole    @default(MEMBER)
+
+  profile EmployeeProfile?
+
+  companyId String @db.Uuid
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, systemRole])
+}
+
+model EmployeeProfile {
+  userId    String  @id @db.Uuid
+  firstName String
+  lastName  String
+  photoUrl  String?
+  phone     String?
+  jobTitle  String
+  bio       String?
+
+  department       Department
+  employmentStatus EmployeeStatus @default(ACTIVE)
+
+  user UserAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([department, employmentStatus])
+  @@index([lastName, firstName])
 }
