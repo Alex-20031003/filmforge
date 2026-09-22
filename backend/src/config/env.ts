@@ -8,13 +8,7 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(4200),
 
   DATABASE_URL: z
-    .string({
-      error: (issue) =>
-        issue.input === undefined
-          ? 'DATABASE_URL is required'
-          : 'DATABASE_URL must be a string',
-    })
-    .url({ error: 'DATABASE_URL must be a valid URL' })
+    .url()
     .min(1, { error: 'DATABASE_URL cannot be empty' })
     .refine(
       (url) => url.startsWith('postgres://') || url.startsWith('postgresql://'),

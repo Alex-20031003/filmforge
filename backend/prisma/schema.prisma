@@ -76,7 +76,11 @@ model UserAccount {
   accountStatus AccountStatus @default(PENDING_ACTIVATION)
   systemRole    SystemRole    @default(MEMBER)
 
-  profile EmployeeProfile?
+  profile            EmployeeProfile?
+  authSessions       AuthSession[]
+  activationSessions ActivationSession[]
+  emailTokens        RecoveryEmailVerificationToken[]
+  resetTokens        PasswordResetToken[]
 
   companyId String @db.Uuid
 
@@ -101,4 +105,64 @@ model EmployeeProfile {
 
   @@index([department, employmentStatus])
   @@index([lastName, firstName])
+}
+
+model AuthSession {
+  id               String    @id @default(uuid()) @db.Uuid
+  refreshTokenHash String    @unique
+  expiresAt        DateTime
+  lastUsedAt       DateTime?
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+
+  userId String @db.Uuid
+
+  user UserAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model ActivationSession {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user UserAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model RecoveryEmailVerificationToken {
+  id             String    @id @default(uuid()) @db.Uuid
+  pendingEmail   String
+  tokenHash      String    @unique
+  expiresAt      DateTime
+  failedAttempts Int       @default(0)
+  invalidatedAt  DateTime?
+  usedAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  userId String @db.Uuid
+
+  user UserAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  userId String @db.Uuid
+
+  user UserAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
 }
