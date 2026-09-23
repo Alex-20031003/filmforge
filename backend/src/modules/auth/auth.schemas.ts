@@ -21,3 +21,5 @@ export const loginBodySchema = z.strictObject({
     .min(1, { error: 'Password is required' })
     .max(128, { error: 'Password must be at most 128 characters' }),
 })
+
+export type LoginBody = z.infer<typeof loginBodySchema>
