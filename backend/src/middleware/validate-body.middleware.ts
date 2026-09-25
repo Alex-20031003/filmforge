@@ -1,8 +1,8 @@
 import type { RequestHandler } from 'express'
-import { z } from 'zod'
+import { type ZodType, flattenError } from 'zod'
 import { AppError } from '../shared/errors/app-error.js'
 
-export const validateBody = (schema: z.ZodType): RequestHandler => {
+export const validateBody = (schema: ZodType): RequestHandler => {
   return (req, _res, next) => {
     const result = schema.safeParse(req.body)
 
@@ -11,7 +11,7 @@ export const validateBody = (schema: z.ZodType): RequestHandler => {
         400,
         'VALIDATION_ERROR',
         'Request validation failed',
-        z.flattenError(result.error),
+        flattenError(result.error),
       )
 
       next(error)
