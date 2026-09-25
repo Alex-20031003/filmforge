@@ -6,6 +6,12 @@ type CreateActivationSessionInput = {
   expiresAt: Date
 }
 
+type CreateAuthSessionInput = {
+  userId: string
+  refreshTokenHash: string
+  expiresAt: Date
+}
+
 export const findAuthAccountByUsername = async (username: string) => {
   const account = await prisma.userAccount.findUnique({
     where: {
@@ -38,4 +44,22 @@ export const createActivationSessionRecord = async (
   })
 
   return activationSession
+}
+
+export const createAuthSessionRecord = async (
+  input: CreateAuthSessionInput,
+) => {
+  const authSession = await prisma.authSession.create({
+    data: {
+      userId: input.userId,
+      refreshTokenHash: input.refreshTokenHash,
+      expiresAt: input.expiresAt,
+    },
+    select: {
+      id: true,
+      expiresAt: true,
+    },
+  })
+
+  return authSession
 }
