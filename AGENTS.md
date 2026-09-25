@@ -25,7 +25,7 @@ Main documentation pages:
 
 The Decision Log is authoritative for approved business decisions.
 
-Approved decisions currently extend through D-041.
+Approved decisions currently extend through D-042.
 
 The MVP business/documentation scope is FROZEN.
 
