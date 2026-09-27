@@ -110,6 +110,12 @@ be performed directly when useful for preparation or review.
 An explicit request to edit these instructions authorizes that edit only; it does
 not change the default mentorship workflow for subsequent tasks.
 
+For backend endpoint learning tasks, work from the HTTP entry point inward:
+Router -> Middleware -> Controller -> Service -> Repository -> Prisma.
+Start with the route and proceed through one layer at a time, explaining each
+layer's purpose, inputs, and outputs before moving to the next. If a required
+database schema or constraint is missing, handle it as a separate prerequisite.
+
 Develop FilmForge in vertical slices.
 
 Do NOT implement:
@@ -121,10 +127,12 @@ Instead complete one bounded domain at a time.
 
 Typical slice:
 
-Database schema/constraints
-→ validation
+Database schema/constraints (when required)
+→ router
+→ middleware/validation
+→ controller
 → service/business logic
-→ controller/routes
+→ repository/Prisma
 → tests
 → frontend API integration
 → UI
