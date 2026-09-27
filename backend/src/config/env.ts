@@ -14,6 +14,15 @@ const envSchema = z.object({
       (url) => url.startsWith('postgres://') || url.startsWith('postgresql://'),
       "DATABASE_URL must start with 'postgres://' or 'postgresql://'",
     ),
+
+  JWT_ACCESS_SECRET: z
+    .string({
+      error: (issue) =>
+        issue.input === undefined
+          ? 'JWT_ACCESS_SECRET is required'
+          : 'JWT_ACCESS_SECRET must be a string',
+    })
+    .min(32, { error: 'JWT_ACCESS_SECRET must be at least 32 characters' }),
 })
 
 const result = envSchema.safeParse(process.env)
