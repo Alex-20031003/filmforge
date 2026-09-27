@@ -9,7 +9,7 @@ export const validateBody = (schema: ZodType): RequestHandler => {
     if (!result.success) {
       const error = new AppError(
         400,
-        'VALIDATION_ERROR',
+        'BAD_REQUEST',
         'Request validation failed',
         flattenError(result.error),
       )
