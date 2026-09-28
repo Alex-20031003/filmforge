@@ -67,7 +67,7 @@ model UserAccount {
   id                      String    @id @default(uuid()) @db.Uuid
   username                String    @unique
   passwordHash            String
-  recoveryEmail           String?   @unique
+  recoveryEmail           String    @unique
   recoveryEmailVerifiedAt DateTime?
   mustChangePassword      Boolean   @default(true)
   createdAt               DateTime  @default(now())
