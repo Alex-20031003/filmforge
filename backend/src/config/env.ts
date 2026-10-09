@@ -23,6 +23,11 @@ const envSchema = z.object({
           : 'JWT_ACCESS_SECRET must be a string',
     })
     .min(32, { error: 'JWT_ACCESS_SECRET must be at least 32 characters' }),
+  SMTP_HOST: z.string().trim().min(1),
+  SMTP_PORT: z.coerce.number().int().min(1).max(65535),
+  SMTP_USER: z.email(),
+  SMTP_PASSWORD: z.string().min(1),
+  SMTP_FROM: z.email(),
 })
 
 const result = envSchema.safeParse(process.env)

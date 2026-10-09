@@ -2,7 +2,10 @@ import { AppError } from '../../shared/errors/app-error.js'
 import {
   createActivationSessionRecord,
   createAuthSessionRecord,
+  findActivationSessionByTokenHash,
   findAuthAccountByUsername,
+  findLatestRecoveryEmailVerificationToken,
+  replaceRecoveryEmailVerificationToken,
 } from './auth.repository.js'
 import type { LoginBody } from './auth.schemas.js'
 import argon2 from 'argon2'
@@ -11,6 +14,8 @@ import {
   hashOpaqueToken,
   signAccessToken,
 } from './auth-token.js'
+import { randomInt } from 'node:crypto'
+import { sendActivationCodeEmail } from '../../lib/mail.js'
 
 type LoginResult =
   | {
@@ -120,4 +125,51 @@ export const login = async (credentials: LoginBody): Promise<LoginResult> => {
   }
 
   throw new AppError(401, 'UNAUTHENTICATED', 'Invalid username or password')
+}
+
+export const sendRecoveryEmailCode = async (activationCredential: string) => {
+  const activationCredentialHash = hashOpaqueToken(activationCredential)
+
+  const activationSession = await findActivationSessionByTokenHash(
+    activationCredentialHash,
+  )
+
+  if (
+    !activationSession ||
+    activationSession.expiresAt.getTime() <= Date.now() ||
+    activationSession.user.accountStatus !== 'PENDING_ACTIVATION' ||
+    activationSession.usedAt !== null
+  ) {
+    throw new AppError(401, 'UNAUTHENTICATED', 'Invalid activation credential')
+  }
+
+  const latestToken = await findLatestRecoveryEmailVerificationToken(
+    activationSession.userId,
+  )
+
+  const resendCooldownMs = 60 * 1000
+
+  if (
+    latestToken &&
+    Date.now() - latestToken.createdAt.getTime() < resendCooldownMs
+  ) {
+    throw new AppError(
+      429,
+      'TOO_MANY_REQUESTS',
+      'Please wait before requesting another code',
+    )
+  }
+
+  const code = randomInt(0, 1_000_000).toString().padStart(6, '0')
+  const codeHash = await argon2.hash(code)
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000)
+
+  await replaceRecoveryEmailVerificationToken({
+    userId: activationSession.userId,
+    pendingEmail: activationSession.user.recoveryEmail,
+    tokenHash: codeHash,
+    expiresAt,
+  })
+
+  await sendActivationCodeEmail(activationSession.user.recoveryEmail, code)
 }

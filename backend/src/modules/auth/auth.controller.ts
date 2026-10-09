@@ -1,5 +1,5 @@
 import type { RequestHandler } from 'express'
-import { login } from './auth.service.js'
+import { login, sendRecoveryEmailCode } from './auth.service.js'
 import { env } from '../../config/env.js'
 
 export const loginController: RequestHandler = async (req, res) => {
@@ -50,4 +50,17 @@ export const loginController: RequestHandler = async (req, res) => {
 
     return
   }
+}
+
+export const sendRecoveryEmailCodeController: RequestHandler = async (
+  _req,
+  res,
+) => {
+  const activationCredential = res.locals.activationCredential
+
+  await sendRecoveryEmailCode(activationCredential)
+
+  res.status(200).json({
+    data: {},
+  })
 }

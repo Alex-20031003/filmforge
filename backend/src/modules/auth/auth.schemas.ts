@@ -23,3 +23,5 @@ export const loginBodySchema = z.strictObject({
 })
 
 export type LoginBody = z.infer<typeof loginBodySchema>
+
+export const sendRecoveryEmailCodeBodySchema = z.strictObject({}).default({})
