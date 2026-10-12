@@ -5,6 +5,9 @@ import {
   findActivationSessionByTokenHash,
   findAuthAccountByUsername,
   findLatestRecoveryEmailVerificationToken,
+  findVerifyCodeByUserId,
+  markRecoveryEmailVerified,
+  recordFailedCodeAttempt,
   replaceRecoveryEmailVerificationToken,
 } from './auth.repository.js'
 import type { LoginBody } from './auth.schemas.js'
@@ -172,4 +175,59 @@ export const sendRecoveryEmailCode = async (activationCredential: string) => {
   })
 
   await sendActivationCodeEmail(activationSession.user.recoveryEmail, code)
+}
+
+export const verifyCodeCheck = async (
+  code: string,
+  activationCredential: string,
+) => {
+  const activationCredentialHash = hashOpaqueToken(activationCredential)
+  const activationSession = await findActivationSessionByTokenHash(
+    activationCredentialHash,
+  )
+
+  if (
+    !activationSession ||
+    activationSession.expiresAt.getTime() <= Date.now() ||
+    activationSession.user.accountStatus !== 'PENDING_ACTIVATION' ||
+    activationSession.usedAt !== null
+  ) {
+    throw new AppError(401, 'UNAUTHENTICATED', 'Invalid activation credential')
+  }
+
+  const verificationToken = await findVerifyCodeByUserId(
+    activationSession.userId,
+  )
+
+  if (
+    !verificationToken ||
+    verificationToken.pendingEmail !== activationSession.user.recoveryEmail ||
+    verificationToken.expiresAt.getTime() <= Date.now() ||
+    verificationToken.invalidatedAt !== null ||
+    verificationToken.usedAt !== null ||
+    verificationToken.failedAttempts >= 5
+  ) {
+    throw new AppError(
+      400,
+      'BAD_REQUEST',
+      'Invalid or expired verification code',
+    )
+  }
+
+  const codesMatch = await argon2.verify(verificationToken.tokenHash, code)
+
+  if (!codesMatch) {
+    await recordFailedCodeAttempt(
+      verificationToken.id,
+      verificationToken.failedAttempts,
+    )
+
+    throw new AppError(400, 'BAD_REQUEST', 'Invalid verification code')
+  }
+
+  await markRecoveryEmailVerified(
+    verificationToken.id,
+    activationSession.userId,
+    verificationToken.pendingEmail,
+  )
 }

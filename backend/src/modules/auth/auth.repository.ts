@@ -1,4 +1,5 @@
 import { prisma } from '../../lib/prisma.js'
+import { AppError } from '../../shared/errors/app-error.js'
 
 type CreateActivationSessionInput = {
   userId: string
@@ -131,5 +132,86 @@ export const replaceRecoveryEmailVerificationToken = async (
         createdAt: true,
       },
     })
+  })
+}
+
+export const findVerifyCodeByUserId = async (userId: string) => {
+  const activationSession = prisma.recoveryEmailVerificationToken.findFirst({
+    where: {
+      userId,
+    },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      tokenHash: true,
+      pendingEmail: true,
+      expiresAt: true,
+      failedAttempts: true,
+      invalidatedAt: true,
+      usedAt: true,
+    },
+  })
+
+  return activationSession
+}
+
+export const recordFailedCodeAttempt = async (
+  tokenId: string,
+  failedAttempts: number,
+) => {
+  await prisma.recoveryEmailVerificationToken.update({
+    where: { id: tokenId },
+    data: {
+      failedAttempts: { increment: 1 },
+      ...(failedAttempts === 4 ? { invalidatedAt: new Date() } : {}),
+    },
+  })
+}
+
+export const markRecoveryEmailVerified = async (
+  tokenId: string,
+  userId: string,
+  pendingEmail: string,
+) => {
+  const verifiedAt = new Date()
+
+  await prisma.$transaction(async (tx) => {
+    const tokenUpdate = await tx.recoveryEmailVerificationToken.updateMany({
+      where: {
+        id: tokenId,
+        userId,
+        pendingEmail,
+        expiresAt: { gt: verifiedAt },
+        failedAttempts: { lt: 5 },
+        invalidatedAt: null,
+        usedAt: null,
+      },
+      data: { usedAt: verifiedAt },
+    })
+
+    if (tokenUpdate.count !== 1) {
+      throw new AppError(
+        400,
+        'BAD_REQUEST',
+        'Invalid or expired verification code',
+      )
+    }
+
+    const accountUpdate = await tx.userAccount.updateMany({
+      where: {
+        id: userId,
+        recoveryEmail: pendingEmail,
+        accountStatus: 'PENDING_ACTIVATION',
+      },
+      data: { recoveryEmailVerifiedAt: verifiedAt },
+    })
+
+    if (accountUpdate.count !== 1) {
+      throw new AppError(
+        400,
+        'BAD_REQUEST',
+        'Invalid or expired verification code',
+      )
+    }
   })
 }

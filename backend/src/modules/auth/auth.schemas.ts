@@ -25,3 +25,17 @@ export const loginBodySchema = z.strictObject({
 export type LoginBody = z.infer<typeof loginBodySchema>
 
 export const sendRecoveryEmailCodeBodySchema = z.strictObject({}).default({})
+
+const onlyDigits = /^\d+$/
+
+export const verifyCodeCheckSchema = z.strictObject({
+  code: z
+    .string({
+      error: (issue) =>
+        issue.input === undefined
+          ? 'Code is required'
+          : 'Code must be a string',
+    })
+    .length(6, { error: 'The code must be 6 characters long' })
+    .regex(onlyDigits, { error: 'Code must contain only digits' }),
+})
