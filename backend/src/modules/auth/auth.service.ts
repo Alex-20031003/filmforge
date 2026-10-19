@@ -1,5 +1,6 @@
 import { AppError } from '../../shared/errors/app-error.js'
 import {
+  completeActivationRecord,
   createActivationSessionRecord,
   createAuthSessionRecord,
   findActivationSessionByTokenHash,
@@ -61,11 +62,8 @@ export const verifyLoginCredentials = async (credentials: LoginBody) => {
 
 export const issueActivationCredential = async (userId: string) => {
   const token = generateOpaqueToken()
-
   const tokenHash = hashOpaqueToken(token)
-
   const expiresAt = new Date(Date.now() + ACTIVATION_SESSION_TTL_MS)
-
   const activationSession = await createActivationSessionRecord({
     userId,
     tokenHash,
@@ -80,11 +78,8 @@ export const issueActivationCredential = async (userId: string) => {
 
 export const issueRefreshCredential = async (userId: string) => {
   const refreshToken = generateOpaqueToken()
-
   const refreshTokenHash = hashOpaqueToken(refreshToken)
-
   const expiresAt = new Date(Date.now() + AUTH_SESSION_TTL_MS)
-
   const authSession = await createAuthSessionRecord({
     userId,
     refreshTokenHash,
@@ -113,7 +108,6 @@ export const login = async (credentials: LoginBody): Promise<LoginResult> => {
 
   if (account.accountStatus === 'ACTIVE') {
     const accountAuthSession = await issueRefreshCredential(account.userId)
-
     const accessToken = await signAccessToken(
       account.userId,
       accountAuthSession.sessionId,
@@ -132,7 +126,6 @@ export const login = async (credentials: LoginBody): Promise<LoginResult> => {
 
 export const sendRecoveryEmailCode = async (activationCredential: string) => {
   const activationCredentialHash = hashOpaqueToken(activationCredential)
-
   const activationSession = await findActivationSessionByTokenHash(
     activationCredentialHash,
   )
@@ -230,4 +223,77 @@ export const verifyCodeCheck = async (
     activationSession.userId,
     verificationToken.pendingEmail,
   )
+}
+
+export const completeActivation = async (
+  newPassword: string,
+  activationCredential: string,
+) => {
+  const activactionCredentialHash = hashOpaqueToken(activationCredential)
+  const activationSession = await findActivationSessionByTokenHash(
+    activactionCredentialHash,
+  )
+
+  if (
+    !activationSession ||
+    activationSession.expiresAt.getTime() <= Date.now() ||
+    activationSession.usedAt !== null ||
+    activationSession.user.accountStatus !== 'PENDING_ACTIVATION'
+  ) {
+    throw new AppError(401, 'UNAUTHENTICATED', 'Invalid activation credential')
+  }
+
+  const verificationToken = await findVerifyCodeByUserId(
+    activationSession.userId,
+  )
+
+  if (
+    activationSession.user.recoveryEmailVerifiedAt === null ||
+    !verificationToken ||
+    verificationToken.pendingEmail !== activationSession.user.recoveryEmail ||
+    verificationToken.usedAt === null ||
+    verificationToken.invalidatedAt !== null
+  ) {
+    throw new AppError(409, 'CONFLICT', 'Recovery email is not verified')
+  }
+
+  const samePassword = await argon2.verify(
+    activationSession.user.passwordHash,
+    newPassword,
+  )
+
+  if (samePassword) {
+    throw new AppError(
+      400,
+      'BAD_REQUEST',
+      'New password must differ from the current password',
+    )
+  }
+
+  const passwordHash = await argon2.hash(newPassword)
+
+  const refreshToken = generateOpaqueToken()
+  const refreshTokenHash = hashOpaqueToken(refreshToken)
+  const refreshTokenExpiresAt = new Date(Date.now() + AUTH_SESSION_TTL_MS)
+
+  const authSession = await completeActivationRecord({
+    activationSessionId: activationSession.id,
+    verificationTokenId: verificationToken.id,
+    userId: activationSession.userId,
+    recoveryEmail: activationSession.user.recoveryEmail,
+    passwordHash,
+    refreshTokenHash,
+    refreshTokenExpiresAt,
+  })
+
+  const accessToken = await signAccessToken(
+    activationSession.userId,
+    authSession.id,
+  )
+
+  return {
+    accessToken,
+    refreshToken,
+    refreshTokenExpiresAt,
+  }
 }

@@ -4,8 +4,10 @@ import {
   verifyCodeCheckSchema,
   loginBodySchema,
   sendRecoveryEmailCodeBodySchema,
+  newPasswordSchema,
 } from './auth.schemas.js'
 import {
+  completeActivationController,
   loginController,
   sendRecoveryEmailCodeController,
   verifyCodeCheckController,
@@ -29,4 +31,10 @@ router.post(
   validateBody(verifyCodeCheckSchema),
   requireActivationCredential,
   verifyCodeCheckController,
+)
+router.post(
+  '/activation/complete',
+  validateBody(newPasswordSchema),
+  requireActivationCredential,
+  completeActivationController,
 )

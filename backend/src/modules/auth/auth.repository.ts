@@ -20,6 +20,16 @@ type replaceRecoveryEmailVerificationTokenInput = {
   expiresAt: Date
 }
 
+type CompleteActivationInput = {
+  activationSessionId: string
+  verificationTokenId: string
+  userId: string
+  recoveryEmail: string
+  passwordHash: string
+  refreshTokenHash: string
+  refreshTokenExpiresAt: Date
+}
+
 export const findAuthAccountByUsername = async (username: string) => {
   const account = await prisma.userAccount.findUnique({
     where: {
@@ -78,13 +88,16 @@ export const findActivationSessionByTokenHash = async (tokenHash: string) => {
       tokenHash,
     },
     select: {
+      id: true,
       userId: true,
       expiresAt: true,
       usedAt: true,
       user: {
         select: {
+          recoveryEmailVerifiedAt: true,
           accountStatus: true,
           recoveryEmail: true,
+          passwordHash: true,
         },
       },
     },
@@ -213,5 +226,94 @@ export const markRecoveryEmailVerified = async (
         'Invalid or expired verification code',
       )
     }
+  })
+}
+
+export const completeActivationRecord = async (
+  input: CompleteActivationInput,
+) => {
+  const completedAt = new Date()
+
+  return prisma.$transaction(async (tx) => {
+    const verificationToken = await tx.recoveryEmailVerificationToken.findFirst(
+      {
+        where: {
+          id: input.verificationTokenId,
+          userId: input.userId,
+          pendingEmail: input.recoveryEmail,
+          usedAt: { not: null },
+          invalidatedAt: null,
+        },
+        select: { id: true },
+      },
+    )
+
+    if (!verificationToken) {
+      throw new AppError(409, 'CONFLICT', 'Recovery email is not verified')
+    }
+
+    const activationUpdate = await tx.activationSession.updateMany({
+      where: {
+        id: input.activationSessionId,
+        userId: input.userId,
+        usedAt: null,
+        expiresAt: { gt: completedAt },
+      },
+      data: { usedAt: completedAt },
+    })
+
+    if (activationUpdate.count !== 1) {
+      throw new AppError(
+        401,
+        'UNAUTHENTICATED',
+        'Invalid activation credential',
+      )
+    }
+
+    const accountUpdate = await tx.userAccount.updateMany({
+      where: {
+        id: input.userId,
+        recoveryEmail: input.recoveryEmail,
+        recoveryEmailVerifiedAt: { not: null },
+        accountStatus: 'PENDING_ACTIVATION',
+      },
+      data: {
+        passwordHash: input.passwordHash,
+        accountStatus: 'ACTIVE',
+        mustChangePassword: false,
+      },
+    })
+
+    if (accountUpdate.count !== 1) {
+      throw new AppError(409, 'CONFLICT', 'Account cannot be activated')
+    }
+
+    await tx.activationSession.updateMany({
+      where: {
+        userId: input.userId,
+        usedAt: null,
+      },
+      data: { usedAt: completedAt },
+    })
+
+    await tx.recoveryEmailVerificationToken.updateMany({
+      where: {
+        userId: input.userId,
+        usedAt: null,
+        invalidatedAt: null,
+      },
+      data: { invalidatedAt: completedAt },
+    })
+
+    return tx.authSession.create({
+      data: {
+        userId: input.userId,
+        refreshTokenHash: input.refreshTokenHash,
+        expiresAt: input.refreshTokenExpiresAt,
+      },
+      select: {
+        id: true,
+      },
+    })
   })
 }

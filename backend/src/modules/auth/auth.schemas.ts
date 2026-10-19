@@ -39,3 +39,15 @@ export const verifyCodeCheckSchema = z.strictObject({
     .length(6, { error: 'The code must be 6 characters long' })
     .regex(onlyDigits, { error: 'Code must contain only digits' }),
 })
+
+export const newPasswordSchema = z.strictObject({
+  newPassword: z
+    .string({
+      error: (issue) =>
+        issue.input === undefined
+          ? 'New password is required'
+          : 'New password must be a string',
+    })
+    .min(10, { error: 'New password must be at least 10 characters' })
+    .max(128, { error: 'New password must be at most 128 characters' }),
+})
