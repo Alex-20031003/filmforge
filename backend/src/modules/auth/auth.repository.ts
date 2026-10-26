@@ -317,3 +317,34 @@ export const completeActivationRecord = async (
     })
   })
 }
+
+export const findCurrentAuthSession = async (
+  userId: string,
+  sessionId: string,
+) => {
+  return prisma.authSession.findFirst({
+    where: {
+      id: sessionId,
+      userId,
+      revokedAt: null,
+      expiresAt: { gt: new Date() },
+    },
+    select: {
+      user: {
+        select: {
+          id: true,
+          username: true,
+          accountStatus: true,
+          mustChangePassword: true,
+          profile: {
+            select: {
+              firstName: true,
+              lastName: true,
+              photoUrl: true,
+            },
+          },
+        },
+      },
+    },
+  })
+}

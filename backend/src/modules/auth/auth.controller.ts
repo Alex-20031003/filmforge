@@ -1,6 +1,7 @@
 import type { RequestHandler } from 'express'
 import {
   completeActivation,
+  getMe,
   login,
   sendRecoveryEmailCode,
   verifyCodeCheck,
@@ -120,4 +121,12 @@ export const completeActivationController: RequestHandler = async (
       kind: 'authenticated',
     },
   })
+}
+
+export const getMeController: RequestHandler = async (req, res) => {
+  const { userId, sessionId } = res.locals.auth
+
+  const result = await getMe(userId, sessionId)
+
+  res.status(200).json({ data: result })
 }

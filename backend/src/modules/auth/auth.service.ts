@@ -5,6 +5,7 @@ import {
   createAuthSessionRecord,
   findActivationSessionByTokenHash,
   findAuthAccountByUsername,
+  findCurrentAuthSession,
   findLatestRecoveryEmailVerificationToken,
   findVerifyCodeByUserId,
   markRecoveryEmailVerified,
@@ -295,5 +296,20 @@ export const completeActivation = async (
     accessToken,
     refreshToken,
     refreshTokenExpiresAt,
+  }
+}
+
+export const getMe = async (userId: string, sessionId: string) => {
+  const authSession = await findCurrentAuthSession(userId, sessionId)
+
+  if (authSession === null || authSession.user.accountStatus !== 'ACTIVE') {
+    throw new AppError(401, 'UNAUTHENTICATED', 'Invalid or expired session')
+  }
+
+  return {
+    id: authSession.user.id,
+    username: authSession.user.username,
+    mustChangePassword: authSession.user.mustChangePassword,
+    profile: authSession.user.profile,
   }
 }
