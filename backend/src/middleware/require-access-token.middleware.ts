@@ -11,7 +11,11 @@ export const requireAccessToken: RequestHandler = async (req, res, next) => {
   const accessToken = accessCookie?.slice('accessToken='.length)
 
   if (!accessToken) {
-    throw new AppError(401, 'UNAUTHENTICATED', 'Invalid or expired access token')
+    throw new AppError(
+      401,
+      'UNAUTHENTICATED',
+      'Invalid or expired access token',
+    )
   }
 
   const auth = await verifyAccessToken(accessToken)

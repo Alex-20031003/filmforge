@@ -5,12 +5,14 @@ import {
   createAuthSessionRecord,
   findActivationSessionByTokenHash,
   findAuthAccountByUsername,
+  findAuthSessionByRefreshTokenHash,
   findCurrentAuthSession,
   findLatestRecoveryEmailVerificationToken,
   findVerifyCodeByUserId,
   markRecoveryEmailVerified,
   recordFailedCodeAttempt,
   replaceRecoveryEmailVerificationToken,
+  rotateRefreshTokenRecord,
 } from './auth.repository.js'
 import type { LoginBody } from './auth.schemas.js'
 import argon2 from 'argon2'
@@ -311,5 +313,48 @@ export const getMe = async (userId: string, sessionId: string) => {
     username: authSession.user.username,
     mustChangePassword: authSession.user.mustChangePassword,
     profile: authSession.user.profile,
+  }
+}
+
+export const refreshSession = async (refreshToken: string) => {
+  const oldTokenHash = hashOpaqueToken(refreshToken)
+  const session = await findAuthSessionByRefreshTokenHash(oldTokenHash)
+
+  if (
+    !session ||
+    session.revokedAt !== null ||
+    session.expiresAt.getTime() <= Date.now() ||
+    session.user.accountStatus !== 'ACTIVE'
+  ) {
+    throw new AppError(
+      401,
+      'UNAUTHENTICATED',
+      'Invalid or expired refresh token',
+    )
+  }
+
+  const newRefreshToken = generateOpaqueToken()
+  const newTokenHash = hashOpaqueToken(newRefreshToken)
+
+  const accessToken = await signAccessToken(session.userId, session.id)
+
+  const rotation = await rotateRefreshTokenRecord(
+    session.id,
+    newTokenHash,
+    oldTokenHash,
+  )
+
+  if (rotation.count !== 1) {
+    throw new AppError(
+      401,
+      'UNAUTHENTICATED',
+      'Invalid or expired refresh token',
+    )
+  }
+
+  return {
+    accessToken,
+    refreshToken: newRefreshToken,
+    refreshTokenExpiresAt: session.expiresAt,
   }
 }

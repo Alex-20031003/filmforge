@@ -10,12 +10,14 @@ import {
   completeActivationController,
   getMeController,
   loginController,
+  refreshController,
   sendRecoveryEmailCodeController,
   verifyCodeCheckController,
 } from './auth.controller.js'
 import { requireActivationCredential } from '../../middleware/require-activation-credential.middleware.js'
 import { activationSendRateLimit } from '../../middleware/activation-send-rate-limit.middleware.js'
 import { requireAccessToken } from '../../middleware/require-access-token.middleware.js'
+import { requireRefreshToken } from '../../middleware/require-refresh-token.middleware.js'
 
 export const router = Router()
 
@@ -41,3 +43,5 @@ router.post(
   completeActivationController,
 )
 router.get('/me', requireAccessToken, getMeController)
+
+router.post('/refresh', requireRefreshToken, refreshController)

@@ -3,6 +3,7 @@ import {
   completeActivation,
   getMe,
   login,
+  refreshSession,
   sendRecoveryEmailCode,
   verifyCodeCheck,
 } from './auth.service.js'
@@ -123,10 +124,40 @@ export const completeActivationController: RequestHandler = async (
   })
 }
 
-export const getMeController: RequestHandler = async (req, res) => {
+export const getMeController: RequestHandler = async (_req, res) => {
   const { userId, sessionId } = res.locals.auth
 
   const result = await getMe(userId, sessionId)
 
   res.status(200).json({ data: result })
+}
+
+export const refreshController: RequestHandler = async (_req, res) => {
+  const ACCESS_TOKEN_TTL_MS = 15 * 60 * 1000
+
+  const refreshToken = res.locals.refreshToken
+
+  const result = await refreshSession(refreshToken)
+
+  res.cookie('accessToken', result.accessToken, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: env.NODE_ENV === 'production',
+    path: '/api/v1',
+    maxAge: ACCESS_TOKEN_TTL_MS,
+  })
+
+  res.cookie('refreshToken', result.refreshToken, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: env.NODE_ENV === 'production',
+    path: '/api/v1/auth',
+    expires: result.refreshTokenExpiresAt,
+  })
+
+  res.status(200).json({
+    data: {
+      kind: 'authenticated',
+    },
+  })
 }

@@ -348,3 +348,42 @@ export const findCurrentAuthSession = async (
     },
   })
 }
+
+export const findAuthSessionByRefreshTokenHash = async (tokenHash: string) => {
+  return prisma.authSession.findUnique({
+    where: {
+      refreshTokenHash: tokenHash,
+    },
+    select: {
+      id: true,
+      userId: true,
+      expiresAt: true,
+      revokedAt: true,
+      user: {
+        select: {
+          accountStatus: true,
+        },
+      },
+    },
+  })
+}
+
+export const rotateRefreshTokenRecord = async (
+  sessionId: string,
+  newTokenHash: string,
+  oldTokenHash: string,
+) => {
+  return prisma.authSession.updateMany({
+    where: {
+      id: sessionId,
+      refreshTokenHash: oldTokenHash,
+      revokedAt: null,
+      expiresAt: { gt: new Date() },
+      user: { is: { accountStatus: 'ACTIVE' } },
+    },
+    data: {
+      refreshTokenHash: newTokenHash,
+      lastUsedAt: new Date(),
+    },
+  })
+}
