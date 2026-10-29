@@ -5,6 +5,7 @@ import {
   loginBodySchema,
   sendRecoveryEmailCodeBodySchema,
   newPasswordSchema,
+  forgotPasswordBody,
 } from './auth.schemas.js'
 import {
   completeActivationController,
@@ -14,6 +15,7 @@ import {
   sendRecoveryEmailCodeController,
   verifyCodeCheckController,
   logoutController,
+  forgotPasswordController,
 } from './auth.controller.js'
 import { requireActivationCredential } from '../../middleware/require-activation-credential.middleware.js'
 import { activationSendRateLimit } from '../../middleware/activation-send-rate-limit.middleware.js'
@@ -47,3 +49,8 @@ router.get('/me', requireAccessToken, getMeController)
 
 router.post('/refresh', requireRefreshToken, refreshController)
 router.post('/logout', requireRefreshToken, logoutController)
+router.post(
+  '/forgot-password',
+  validateBody(forgotPasswordBody),
+  forgotPasswordController,
+)

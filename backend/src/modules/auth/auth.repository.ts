@@ -401,3 +401,31 @@ export const revokeAuthSessionByRefreshTokenHash = async (
     },
   })
 }
+
+export const findAccountRecoveryInfoByUsername = async (username: string) => {
+  return prisma.userAccount.findUnique({
+    where: {
+      username,
+    },
+    select: {
+      id: true,
+      accountStatus: true,
+      recoveryEmailVerifiedAt: true,
+      recoveryEmail: true,
+    },
+  })
+}
+
+export const createPasswordResetTokenRecord = async (
+  userId: string,
+  resetTokenHash: string,
+  expiresAt: Date,
+) => {
+  return prisma.passwordResetToken.create({
+    data: {
+      userId,
+      tokenHash: resetTokenHash,
+      expiresAt,
+    },
+  })
+}

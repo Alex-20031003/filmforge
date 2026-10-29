@@ -1,6 +1,7 @@
 import type { RequestHandler } from 'express'
 import {
   completeActivation,
+  forgotPassword,
   getMe,
   login,
   logoutSession,
@@ -181,6 +182,14 @@ export const logoutController: RequestHandler = async (_req, res) => {
     secure: env.NODE_ENV === 'production',
     path: '/api/v1/auth',
   })
+
+  res.status(200).json({ data: {} })
+}
+
+export const forgotPasswordController: RequestHandler = async (req, res) => {
+  const username = req.body.username
+
+  await forgotPassword(username)
 
   res.status(200).json({ data: {} })
 }

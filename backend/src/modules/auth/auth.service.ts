@@ -3,6 +3,8 @@ import {
   completeActivationRecord,
   createActivationSessionRecord,
   createAuthSessionRecord,
+  createPasswordResetTokenRecord,
+  findAccountRecoveryInfoByUsername,
   findActivationSessionByTokenHash,
   findAuthAccountByUsername,
   findAuthSessionByRefreshTokenHash,
@@ -23,7 +25,10 @@ import {
   signAccessToken,
 } from './auth-token.js'
 import { randomInt } from 'node:crypto'
-import { sendActivationCodeEmail } from '../../lib/mail.js'
+import {
+  sendActivationCodeEmail,
+  sendPasswordResetEmail,
+} from '../../lib/mail/mail.js'
 
 type LoginResult =
   | {
@@ -372,4 +377,29 @@ export const logoutSession = async (refreshToken: string) => {
       'Invalid or expired refresh token',
     )
   }
+}
+
+export const forgotPassword = async (username: string) => {
+  const userAccount = await findAccountRecoveryInfoByUsername(username)
+
+  if (
+    !userAccount ||
+    userAccount.accountStatus !== 'ACTIVE' ||
+    !userAccount.recoveryEmailVerifiedAt
+  ) {
+    return
+  }
+
+  const resetToken = generateOpaqueToken()
+  const resetTokenHash = hashOpaqueToken(resetToken)
+  const RESET_TOKEN_TTL_MS = 30 * 60 * 1000
+  const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS)
+
+  await createPasswordResetTokenRecord(
+    userAccount.id,
+    resetTokenHash,
+    expiresAt,
+  )
+
+  await sendPasswordResetEmail(userAccount.recoveryEmail, resetToken)
 }

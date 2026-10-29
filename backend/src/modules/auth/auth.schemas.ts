@@ -51,3 +51,15 @@ export const newPasswordSchema = z.strictObject({
     .min(10, { error: 'New password must be at least 10 characters' })
     .max(128, { error: 'New password must be at most 128 characters' }),
 })
+
+export const forgotPasswordBody = z.strictObject({
+  username: z
+    .string({
+      error: (issue) =>
+        issue.input === undefined
+          ? 'Username is required'
+          : 'Username must be a string',
+    })
+    .trim()
+    .min(1, { error: 'Username is required' }),
+})
