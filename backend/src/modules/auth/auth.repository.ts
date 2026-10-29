@@ -387,3 +387,17 @@ export const rotateRefreshTokenRecord = async (
     },
   })
 }
+
+export const revokeAuthSessionByRefreshTokenHash = async (
+  tokenHash: string,
+) => {
+  return prisma.authSession.updateMany({
+    where: {
+      refreshTokenHash: tokenHash,
+      revokedAt: null,
+    },
+    data: {
+      revokedAt: new Date(),
+    },
+  })
+}

@@ -3,6 +3,7 @@ import {
   completeActivation,
   getMe,
   login,
+  logoutSession,
   refreshSession,
   sendRecoveryEmailCode,
   verifyCodeCheck,
@@ -160,4 +161,26 @@ export const refreshController: RequestHandler = async (_req, res) => {
       kind: 'authenticated',
     },
   })
+}
+
+export const logoutController: RequestHandler = async (_req, res) => {
+  const refreshToken = res.locals.refreshToken
+
+  await logoutSession(refreshToken)
+
+  res.clearCookie('accessToken', {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: env.NODE_ENV === 'production',
+    path: '/api/v1',
+  })
+
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: env.NODE_ENV === 'production',
+    path: '/api/v1/auth',
+  })
+
+  res.status(200).json({ data: {} })
 }

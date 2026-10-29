@@ -12,6 +12,7 @@ import {
   markRecoveryEmailVerified,
   recordFailedCodeAttempt,
   replaceRecoveryEmailVerificationToken,
+  revokeAuthSessionByRefreshTokenHash,
   rotateRefreshTokenRecord,
 } from './auth.repository.js'
 import type { LoginBody } from './auth.schemas.js'
@@ -356,5 +357,19 @@ export const refreshSession = async (refreshToken: string) => {
     accessToken,
     refreshToken: newRefreshToken,
     refreshTokenExpiresAt: session.expiresAt,
+  }
+}
+
+export const logoutSession = async (refreshToken: string) => {
+  const tokenHash = hashOpaqueToken(refreshToken)
+
+  const revokeAuthSession = await revokeAuthSessionByRefreshTokenHash(tokenHash)
+
+  if (revokeAuthSession.count !== 1) {
+    throw new AppError(
+      401,
+      'UNAUTHENTICATED',
+      'Invalid or expired refresh token',
+    )
   }
 }

@@ -13,6 +13,7 @@ import {
   refreshController,
   sendRecoveryEmailCodeController,
   verifyCodeCheckController,
+  logoutController,
 } from './auth.controller.js'
 import { requireActivationCredential } from '../../middleware/require-activation-credential.middleware.js'
 import { activationSendRateLimit } from '../../middleware/activation-send-rate-limit.middleware.js'
@@ -45,3 +46,4 @@ router.post(
 router.get('/me', requireAccessToken, getMeController)
 
 router.post('/refresh', requireRefreshToken, refreshController)
+router.post('/logout', requireRefreshToken, logoutController)
