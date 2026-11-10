@@ -7,6 +7,7 @@ import {
   newPasswordSchema,
   forgotPasswordBody,
   resetPasswordBody,
+  changePasswordBody,
 } from './auth.schemas.js'
 import {
   completeActivationController,
@@ -18,6 +19,7 @@ import {
   logoutController,
   forgotPasswordController,
   resetPasswordController,
+  changePasswordController,
 } from './auth.controller.js'
 import { requireActivationCredential } from '../../middleware/require-activation-credential.middleware.js'
 import { activationSendRateLimit } from '../../middleware/activation-send-rate-limit.middleware.js'
@@ -60,4 +62,10 @@ router.post(
   '/reset-password',
   validateBody(resetPasswordBody),
   resetPasswordController,
+)
+router.post(
+  '/change-password',
+  requireAccessToken,
+  validateBody(changePasswordBody),
+  changePasswordController,
 )

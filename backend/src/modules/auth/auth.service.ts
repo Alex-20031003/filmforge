@@ -1,5 +1,6 @@
 import { AppError } from '../../shared/errors/app-error.js'
 import {
+  changePasswordAndRevokeOtherSessions,
   completeActivationRecord,
   completePasswordReset,
   createActivationSessionRecord,
@@ -240,9 +241,9 @@ export const completeActivation = async (
   newPassword: string,
   activationCredential: string,
 ) => {
-  const activactionCredentialHash = hashOpaqueToken(activationCredential)
+  const activationCredentialHash = hashOpaqueToken(activationCredential)
   const activationSession = await findActivationSessionByTokenHash(
-    activactionCredentialHash,
+    activationCredentialHash,
   )
 
   if (
@@ -441,6 +442,52 @@ export const resetPassword = async (token: string, newPassword: string) => {
   await completePasswordReset(
     passwordResetRecord.id,
     passwordResetRecord.userId,
+    newPasswordHash,
+  )
+}
+
+export const changePassword = async (
+  currentPassword: string,
+  newPassword: string,
+  userId: string,
+  sessionId: string,
+) => {
+  const authSession = await findCurrentAuthSession(userId, sessionId)
+
+  if (authSession === null || authSession.user.accountStatus !== 'ACTIVE') {
+    throw new AppError(401, 'UNAUTHENTICATED', 'Invalid or expired session')
+  }
+
+  const currentPasswordHash = authSession.user.passwordHash
+
+  const currentPasswordMatches = await argon2.verify(
+    currentPasswordHash,
+    currentPassword,
+  )
+
+  if (!currentPasswordMatches) {
+    throw new AppError(401, 'UNAUTHENTICATED', 'Invalid current password')
+  }
+
+  const newPasswordMatches = await argon2.verify(
+    currentPasswordHash,
+    newPassword,
+  )
+
+  if (newPasswordMatches === true) {
+    throw new AppError(
+      400,
+      'BAD_REQUEST',
+      'New password must differ from the current password',
+    )
+  }
+
+  const newPasswordHash = await argon2.hash(newPassword)
+
+  await changePasswordAndRevokeOtherSessions(
+    userId,
+    sessionId,
+    currentPasswordHash,
     newPasswordHash,
   )
 }

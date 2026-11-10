@@ -84,3 +84,25 @@ export const resetPasswordBody = z.strictObject({
     .min(10, { error: 'New password must be at least 10 characters' })
     .max(128, { error: 'New password must be at most 128 characters' }),
 })
+
+export const changePasswordBody = z.strictObject({
+  currentPassword: z
+    .string({
+      error: (issue) =>
+        issue.input === undefined
+          ? 'Current password is required'
+          : 'Current password must be a string',
+    })
+    .min(1, { error: 'Current password is required' })
+    .max(128, { error: 'Current password must be at most 128 characters' }),
+
+  newPassword: z
+    .string({
+      error: (issue) =>
+        issue.input === undefined
+          ? 'New password is required'
+          : 'New password must be a string',
+    })
+    .min(10, { error: 'New password must be at least 10 characters' })
+    .max(128, { error: 'New password must be at most 128 characters' }),
+})

@@ -336,6 +336,7 @@ export const findCurrentAuthSession = async (
           username: true,
           accountStatus: true,
           mustChangePassword: true,
+          passwordHash: true,
           profile: {
             select: {
               firstName: true,
@@ -497,6 +498,53 @@ export const completePasswordReset = async (
     await tx.authSession.updateMany({
       where: { userId, revokedAt: null },
       data: { revokedAt: completedAt },
+    })
+  })
+}
+
+export const changePasswordAndRevokeOtherSessions = async (
+  userId: string,
+  sessionId: string,
+  currentPasswordHash: string,
+  newPasswordHash: string,
+): Promise<void> => {
+  await prisma.$transaction(async (tx) => {
+    const changedAt = new Date()
+
+    const currentSession = await tx.authSession.updateMany({
+      where: {
+        id: sessionId,
+        userId,
+        revokedAt: null,
+        expiresAt: { gt: changedAt },
+      },
+      data: { lastUsedAt: changedAt },
+    })
+
+    if (currentSession.count !== 1) {
+      throw new AppError(401, 'UNAUTHENTICATED', 'Invalid or expired session')
+    }
+
+    const account = await tx.userAccount.updateMany({
+      where: {
+        id: userId,
+        accountStatus: 'ACTIVE',
+        passwordHash: currentPasswordHash,
+      },
+      data: { passwordHash: newPasswordHash },
+    })
+
+    if (account.count !== 1) {
+      throw new AppError(401, 'UNAUTHENTICATED', 'Account credentials changed')
+    }
+
+    await tx.authSession.updateMany({
+      where: {
+        userId,
+        id: { not: sessionId },
+        revokedAt: null,
+      },
+      data: { revokedAt: changedAt },
     })
   })
 }

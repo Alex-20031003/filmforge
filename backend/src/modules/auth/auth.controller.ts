@@ -1,5 +1,6 @@
 import type { RequestHandler } from 'express'
 import {
+  changePassword,
   completeActivation,
   forgotPassword,
   getMe,
@@ -199,6 +200,15 @@ export const resetPasswordController: RequestHandler = async (req, res) => {
   const { token, newPassword } = req.body
 
   await resetPassword(token, newPassword)
+
+  res.status(200).json({ data: {} })
+}
+
+export const changePasswordController: RequestHandler = async (req, res) => {
+  const { currentPassword, newPassword } = req.body
+  const { userId, sessionId } = res.locals.auth
+
+  await changePassword(currentPassword, newPassword, userId, sessionId)
 
   res.status(200).json({ data: {} })
 }
