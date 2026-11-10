@@ -63,3 +63,24 @@ export const forgotPasswordBody = z.strictObject({
     .trim()
     .min(1, { error: 'Username is required' }),
 })
+
+export const resetPasswordBody = z.strictObject({
+  token: z
+    .string({
+      error: (issue) =>
+        issue.input === undefined
+          ? 'Token is required'
+          : 'Token must be a string',
+    })
+    .min(1, { error: 'Token is required' }),
+
+  newPassword: z
+    .string({
+      error: (issue) =>
+        issue.input === undefined
+          ? 'New password is required'
+          : 'New password must be a string',
+    })
+    .min(10, { error: 'New password must be at least 10 characters' })
+    .max(128, { error: 'New password must be at most 128 characters' }),
+})

@@ -1,6 +1,7 @@
 import { AppError } from '../../shared/errors/app-error.js'
 import {
   completeActivationRecord,
+  completePasswordReset,
   createActivationSessionRecord,
   createAuthSessionRecord,
   createPasswordResetTokenRecord,
@@ -10,6 +11,7 @@ import {
   findAuthSessionByRefreshTokenHash,
   findCurrentAuthSession,
   findLatestRecoveryEmailVerificationToken,
+  findPasswordResetTokenByHash,
   findVerifyCodeByUserId,
   markRecoveryEmailVerified,
   recordFailedCodeAttempt,
@@ -402,4 +404,43 @@ export const forgotPassword = async (username: string) => {
   )
 
   await sendPasswordResetEmail(userAccount.recoveryEmail, resetToken)
+}
+
+export const resetPassword = async (token: string, newPassword: string) => {
+  const resetPasswordTokenHash = hashOpaqueToken(token)
+
+  const passwordResetRecord = await findPasswordResetTokenByHash(
+    resetPasswordTokenHash,
+  )
+
+  if (
+    !passwordResetRecord ||
+    passwordResetRecord.usedAt !== null ||
+    passwordResetRecord.user.accountStatus !== 'ACTIVE' ||
+    passwordResetRecord.expiresAt.getTime() <= Date.now() ||
+    passwordResetRecord.user.recoveryEmailVerifiedAt === null
+  ) {
+    throw new AppError(401, 'UNAUTHENTICATED', 'Invalid or expired reset token')
+  }
+
+  const isSamePassword = await argon2.verify(
+    passwordResetRecord.user.passwordHash,
+    newPassword,
+  )
+
+  if (isSamePassword) {
+    throw new AppError(
+      400,
+      'BAD_REQUEST',
+      'New password must differ from the current password',
+    )
+  }
+
+  const newPasswordHash = await argon2.hash(newPassword)
+
+  await completePasswordReset(
+    passwordResetRecord.id,
+    passwordResetRecord.userId,
+    newPasswordHash,
+  )
 }

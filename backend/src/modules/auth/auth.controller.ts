@@ -6,6 +6,7 @@ import {
   login,
   logoutSession,
   refreshSession,
+  resetPassword,
   sendRecoveryEmailCode,
   verifyCodeCheck,
 } from './auth.service.js'
@@ -190,6 +191,14 @@ export const forgotPasswordController: RequestHandler = async (req, res) => {
   const username = req.body.username
 
   await forgotPassword(username)
+
+  res.status(200).json({ data: {} })
+}
+
+export const resetPasswordController: RequestHandler = async (req, res) => {
+  const { token, newPassword } = req.body
+
+  await resetPassword(token, newPassword)
 
   res.status(200).json({ data: {} })
 }

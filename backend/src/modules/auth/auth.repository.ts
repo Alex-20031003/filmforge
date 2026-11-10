@@ -429,3 +429,74 @@ export const createPasswordResetTokenRecord = async (
     },
   })
 }
+
+export const findPasswordResetTokenByHash = async (tokenHash: string) => {
+  return prisma.passwordResetToken.findUnique({
+    where: {
+      tokenHash,
+    },
+    select: {
+      id: true,
+      userId: true,
+      usedAt: true,
+      expiresAt: true,
+      user: {
+        select: {
+          passwordHash: true,
+          accountStatus: true,
+          recoveryEmailVerifiedAt: true,
+        },
+      },
+    },
+  })
+}
+
+export const completePasswordReset = async (
+  resetTokenId: string,
+  userId: string,
+  newPasswordHash: string,
+): Promise<void> => {
+  const completedAt = new Date()
+
+  await prisma.$transaction(async (tx) => {
+    const tokenUpdate = await tx.passwordResetToken.updateMany({
+      where: {
+        id: resetTokenId,
+        userId,
+        usedAt: null,
+        expiresAt: { gt: completedAt },
+      },
+      data: { usedAt: completedAt },
+    })
+
+    if (tokenUpdate.count !== 1) {
+      throw new AppError(
+        401,
+        'UNAUTHENTICATED',
+        'Invalid or expired reset token',
+      )
+    }
+
+    const accountUpdate = await tx.userAccount.updateMany({
+      where: {
+        id: userId,
+        accountStatus: 'ACTIVE',
+        recoveryEmailVerifiedAt: { not: null },
+      },
+      data: { passwordHash: newPasswordHash },
+    })
+
+    if (accountUpdate.count !== 1) {
+      throw new AppError(
+        401,
+        'UNAUTHENTICATED',
+        'Invalid or expired reset token',
+      )
+    }
+
+    await tx.authSession.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: completedAt },
+    })
+  })
+}
