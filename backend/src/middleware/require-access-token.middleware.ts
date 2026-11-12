@@ -1,6 +1,7 @@
 import type { RequestHandler } from 'express'
 import { AppError } from '../shared/errors/app-error.js'
 import { verifyAccessToken } from '../modules/auth/auth-token.js'
+import { requireActiveSession } from '../modules/auth/auth.service.js'
 
 export const requireAccessToken: RequestHandler = async (req, res, next) => {
   const accessCookie = (req.headers.cookie ?? '')
@@ -19,7 +20,9 @@ export const requireAccessToken: RequestHandler = async (req, res, next) => {
   }
 
   const auth = await verifyAccessToken(accessToken)
+  const currentUser = await requireActiveSession(auth.userId, auth.sessionId)
 
   res.locals.auth = auth
+  res.locals.currentUser = currentUser
   next()
 }

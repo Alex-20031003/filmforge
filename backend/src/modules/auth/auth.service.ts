@@ -310,7 +310,10 @@ export const completeActivation = async (
   }
 }
 
-export const getMe = async (userId: string, sessionId: string) => {
+export const requireActiveSession = async (
+  userId: string,
+  sessionId: string,
+) => {
   const authSession = await findCurrentAuthSession(userId, sessionId)
 
   if (authSession === null || authSession.user.accountStatus !== 'ACTIVE') {

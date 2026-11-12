@@ -3,7 +3,6 @@ import {
   changePassword,
   completeActivation,
   forgotPassword,
-  getMe,
   login,
   logoutSession,
   refreshSession,
@@ -129,11 +128,7 @@ export const completeActivationController: RequestHandler = async (
 }
 
 export const getMeController: RequestHandler = async (_req, res) => {
-  const { userId, sessionId } = res.locals.auth
-
-  const result = await getMe(userId, sessionId)
-
-  res.status(200).json({ data: result })
+  res.status(200).json({ data: res.locals.currentUser })
 }
 
 export const refreshController: RequestHandler = async (_req, res) => {
