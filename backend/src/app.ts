@@ -5,12 +5,18 @@ import { errorHandler } from './middleware/error-handler.middleware.js'
 import { notFoundMiddleware } from './middleware/not-found.middleware.js'
 import { requestLoggerMiddleware } from './middleware/request-logger.middleware.js'
 import helmet from 'helmet'
+import { corsConfigMiddleware } from './middleware/cors-config.middleware.js'
+import { requireTrustedOrigin } from './middleware/require-trusted-origin.middleware.js'
 
 export const app = express()
 
 app.use(requestLoggerMiddleware)
 
 app.use(helmet())
+
+app.use(corsConfigMiddleware)
+
+app.use(requireTrustedOrigin)
 
 app.use(express.json())
 

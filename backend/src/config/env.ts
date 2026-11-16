@@ -28,6 +28,25 @@ const envSchema = z.object({
   SMTP_USER: z.email(),
   SMTP_PASSWORD: z.string().min(1),
   SMTP_FROM: z.email(),
+
+  FRONTEND_ORIGIN: z.url().refine(
+    (value) => {
+      try {
+        const parsedUrl = new URL(value)
+
+        const isHttp =
+          parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:'
+
+        return isHttp && value === parsedUrl.origin
+      } catch {
+        return false
+      }
+    },
+    {
+      error:
+        'FRONTEND_ORIGIN must be a valid URL with http or https protocol and no path, query, or fragment',
+    },
+  ),
 })
 
 const result = envSchema.safeParse(process.env)
