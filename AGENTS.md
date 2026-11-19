@@ -25,7 +25,7 @@ Main documentation pages:
 
 The Decision Log is authoritative for approved business decisions.
 
-Approved decisions currently extend through D-042.
+Approved decisions currently extend through D-049.
 
 The MVP business/documentation scope is FROZEN.
 
@@ -133,9 +133,16 @@ Database schema/constraints (when required)
 → controller
 → service/business logic
 → repository/Prisma
-→ tests
+→ manual scenario verification
 → frontend API integration
 → UI
+
+Per D-049, automated tests are outside the current portfolio MVP scope and are
+not a release requirement. The user and assistant verify implemented scenarios
+manually against the approved documentation and record expected/actual results
+and unresolved failures. Full manual end-to-end QA is required before release.
+Keep type checking, linting, formatting, and build checks. Do not add automated
+test files, dependencies, or infrastructure unless explicitly requested.
 
 Before starting a slice:
 
@@ -245,7 +252,7 @@ Prefer:
 - realistic business logic;
 - backend permissions;
 - validation;
-- tests;
+- manual verification of successful and rejected scenarios;
 - polished demo data;
 
 over unnecessary enterprise complexity.
