@@ -14,6 +14,39 @@ const envSchema = z.object({
       (url) => url.startsWith('postgres://') || url.startsWith('postgresql://'),
       "DATABASE_URL must start with 'postgres://' or 'postgresql://'",
     ),
+
+  JWT_ACCESS_SECRET: z
+    .string({
+      error: (issue) =>
+        issue.input === undefined
+          ? 'JWT_ACCESS_SECRET is required'
+          : 'JWT_ACCESS_SECRET must be a string',
+    })
+    .min(32, { error: 'JWT_ACCESS_SECRET must be at least 32 characters' }),
+  SMTP_HOST: z.string().trim().min(1),
+  SMTP_PORT: z.coerce.number().int().min(1).max(65535),
+  SMTP_USER: z.email(),
+  SMTP_PASSWORD: z.string().min(1),
+  SMTP_FROM: z.email(),
+
+  FRONTEND_ORIGIN: z.url().refine(
+    (value) => {
+      try {
+        const parsedUrl = new URL(value)
+
+        const isHttp =
+          parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:'
+
+        return isHttp && value === parsedUrl.origin
+      } catch {
+        return false
+      }
+    },
+    {
+      error:
+        'FRONTEND_ORIGIN must be a valid URL with http or https protocol and no path, query, or fragment',
+    },
+  ),
 })
 
 const result = envSchema.safeParse(process.env)

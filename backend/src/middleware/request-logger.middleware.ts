@@ -23,6 +23,7 @@ export const requestLoggerMiddleware = pinoHttp({
         id: request.id,
         method: request.method,
         path,
+        ip: request.remoteAddress,
       }
     },
 

@@ -25,7 +25,7 @@ Main documentation pages:
 
 The Decision Log is authoritative for approved business decisions.
 
-Approved decisions currently extend through D-041.
+Approved decisions currently extend through D-049.
 
 The MVP business/documentation scope is FROZEN.
 
@@ -110,6 +110,12 @@ be performed directly when useful for preparation or review.
 An explicit request to edit these instructions authorizes that edit only; it does
 not change the default mentorship workflow for subsequent tasks.
 
+For backend endpoint learning tasks, work from the HTTP entry point inward:
+Router -> Middleware -> Controller -> Service -> Repository -> Prisma.
+Start with the route and proceed through one layer at a time, explaining each
+layer's purpose, inputs, and outputs before moving to the next. If a required
+database schema or constraint is missing, handle it as a separate prerequisite.
+
 Develop FilmForge in vertical slices.
 
 Do NOT implement:
@@ -121,13 +127,22 @@ Instead complete one bounded domain at a time.
 
 Typical slice:
 
-Database schema/constraints
-→ validation
+Database schema/constraints (when required)
+→ router
+→ middleware/validation
+→ controller
 → service/business logic
-→ controller/routes
-→ tests
+→ repository/Prisma
+→ manual scenario verification
 → frontend API integration
 → UI
+
+Per D-049, automated tests are outside the current portfolio MVP scope and are
+not a release requirement. The user and assistant verify implemented scenarios
+manually against the approved documentation and record expected/actual results
+and unresolved failures. Full manual end-to-end QA is required before release.
+Keep type checking, linting, formatting, and build checks. Do not add automated
+test files, dependencies, or infrastructure unless explicitly requested.
 
 Before starting a slice:
 
@@ -237,7 +252,7 @@ Prefer:
 - realistic business logic;
 - backend permissions;
 - validation;
-- tests;
+- manual verification of successful and rejected scenarios;
 - polished demo data;
 
 over unnecessary enterprise complexity.

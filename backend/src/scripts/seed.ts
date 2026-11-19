@@ -16,6 +16,16 @@ const seedEnvSchema = z.object({
     })
     .min(10, { error: 'SEED_TEMP_PASSWORD must be at least 10 characters' })
     .max(128, { error: 'SEED_TEMP_PASSWORD must be at most 128 characters' }),
+
+  OWNER_RECOVERY_EMAIL: z
+    .email({
+      error: (issue) =>
+        issue.input === undefined
+          ? 'OWNER_RECOVERY_EMAIL is required'
+          : 'OWNER_RECOVERY_EMAIL must be an email',
+    })
+    .trim()
+    .max(255, { error: 'OWNER_RECOVERY_EMAIL must be at most 255 characters' }),
 })
 
 async function main() {
@@ -49,13 +59,15 @@ async function main() {
   const tempPassword = seedEnv.data.SEED_TEMP_PASSWORD
   const passwordHash = await argon2.hash(tempPassword)
 
+  const ownerRecoveryEmail = seedEnv.data.OWNER_RECOVERY_EMAIL
+
   const owner = await prisma.userAccount.upsert({
     where: { username: OWNER_USERNAME },
     update: {},
     create: {
       username: OWNER_USERNAME,
       passwordHash,
-      recoveryEmail: null,
+      recoveryEmail: ownerRecoveryEmail,
       recoveryEmailVerifiedAt: null,
       mustChangePassword: true,
       accountStatus: 'PENDING_ACTIVATION',

@@ -31,7 +31,7 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, next) => {
   if (malformedJson) {
     res.status(400).json({
       error: {
-        code: 'INVALID_JSON',
+        code: 'BAD_REQUEST',
         message: 'Request body contains invalid JSON',
         details: null,
       },
