@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { validateBody } from '../../middleware/validate-body.middleware.js'
+import { validateBody } from '../../middleware/validate-request.middleware.js'
 import {
   verifyCodeCheckSchema,
   loginBodySchema,

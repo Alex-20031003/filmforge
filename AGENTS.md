@@ -25,7 +25,7 @@ Main documentation pages:
 
 The Decision Log is authoritative for approved business decisions.
 
-Approved decisions currently extend through D-049.
+Approved decisions currently extend through D-050.
 
 The MVP business/documentation scope is FROZEN.
 
@@ -245,6 +245,28 @@ Every important screen should handle:
 ## Scope
 
 FilmForge is a portfolio project targeting strong Junior+ / pre-Middle quality.
+
+Per D-050, completion is judged by understandable architecture and working,
+manually verified primary flows. Keep backend permissions, validation, basic
+security, database constraints, and atomic related writes through Prisma nested
+writes or short ordinary transactions.
+
+Advanced concurrency guarantees are outside the portfolio MVP. Do not make
+Serializable isolation, row locks, transaction-client plumbing, P2034 retry
+loops, stress tests, or generic idempotency infrastructure prerequisites for
+completion unless the user explicitly requests a separate task. The last-ACTIVE-
+OWNER rule remains an ordinary service check for sequential requests; document
+the limitation instead of claiming a race-free guarantee. Preserve existing
+working authentication safeguards.
+
+Retain pragmatic FSD as the frontend reference: app, entities, features,
+widgets, and shared. Add layers and slices only as the current screen needs
+them. Prioritize working primary flows integrated across frontend, API, and
+database. Strict architectural ceremony, speculative abstractions, advanced
+production hardening, and optimistic cache updates are not prerequisites.
+Existing prototypes or screen references are sufficient design inputs; a
+separate Figma deliverable and a complete upfront prototype are not MVP gates.
+Introduce unfamiliar constructs one small step at a time.
 
 Prefer:
 - clear architecture;
