@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma.js'
 import { z } from 'zod'
 import argon2 from 'argon2'
+import { seedEmployees } from './seed-employees.data.js'
 
 const COMPANY_ID = 'a8e63f7d-1e2b-4c9a-8d5f-7b6c3e2f1a90'
 const COMPANY_NAME = 'Northlight Pictures'
@@ -26,6 +27,16 @@ const seedEnvSchema = z.object({
     })
     .trim()
     .max(255, { error: 'OWNER_RECOVERY_EMAIL must be at most 255 characters' }),
+
+  SEED_EMPLOYEE_EMAIL_DOMAIN: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .max(180)
+    .default('northlight.example.test')
+    .refine((domain) => z.email().safeParse(`employee@${domain}`).success, {
+      error: 'SEED_EMPLOYEE_EMAIL_DOMAIN must be a valid email domain',
+    }),
 })
 
 async function main() {
@@ -98,6 +109,54 @@ async function main() {
 
   console.log(`Company ready: ${company.name} (${company.id})`)
   console.log(`Initial account ready: ${owner.username} (${owner.id})`)
+
+  for (const employee of seedEmployees) {
+    const employmentStatus = employee.employmentStatus ?? 'ACTIVE'
+
+    const account = await prisma.userAccount.upsert({
+      where: { username: employee.username },
+      // Preserve activation, profile edits, credentials and sessions on reruns.
+      update: {},
+      create: {
+        username: employee.username,
+        // Each account receives its own Argon2 salt.
+        passwordHash: await argon2.hash(tempPassword),
+        recoveryEmail: `${employee.username}@${seedEnv.data.SEED_EMPLOYEE_EMAIL_DOMAIN}`,
+        // Demo sign-in does not imply that the fictional mailbox is verified.
+        recoveryEmailVerifiedAt: null,
+        mustChangePassword: false,
+        accountStatus: employmentStatus === 'ACTIVE' ? 'ACTIVE' : 'DISABLED',
+        systemRole: employee.systemRole ?? 'MEMBER',
+        company: {
+          connect: { id: company.id },
+        },
+        profile: {
+          create: {
+            firstName: employee.firstName,
+            lastName: employee.lastName,
+            department: employee.department,
+            jobTitle: employee.jobTitle,
+            employmentStatus,
+          },
+        },
+      },
+      select: {
+        companyId: true,
+        profile: { select: { userId: true } },
+      },
+    })
+
+    if (account.companyId !== company.id || !account.profile) {
+      throw new Error(
+        `Seed account ${employee.username} must belong to the Company and have a profile`,
+      )
+    }
+  }
+
+  console.log(`Demo employee records ready: ${seedEmployees.length}`)
+  console.log(
+    'Existing accounts were preserved. New ACTIVE demo employees can sign in without activation.',
+  )
 }
 
 try {
